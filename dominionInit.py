@@ -5,9 +5,6 @@ Created on Tue Sep 15 01:47:06 2020
 
 @author: maxzli
 """
-from IPython import get_ipython
-get_ipython().magic('reset -sf')
-
 
 import random
 
@@ -31,6 +28,13 @@ class Player:
                 if strategy[i][1] <= 0:
                     strategy.pop(i)
         self.strategy = strategy
+        
+        
+        self.terminalactions = []
+        self.nontermactions = []
+        self.treasures = []
+        self.victories = []
+        self.curses = []
                 
 
         # initialize deck cards
@@ -41,13 +45,19 @@ class Player:
         random.shuffle(self.deck)
         for i in range(0, 5):
             self.hand.append(self.deck.pop())
-        # print(self.hand)
+            
     def __repr__(self):
         return self.name
+    
+    def showAll(self): print(self.deck + self.discard + self.hand)
     
     def getName(self): return self.name
     def getHand(self): return self.hand
     
+    def discardHand(self, number):
+        self.hand.sort(key=lambda x: x.getCost(), reverse=True)
+        for i in range(number-1, -1, -1):
+            self.discard.append(self.hand.pop(i))
     def drawHand(self, number):
         while number > 0:
             if not self.deck:
@@ -59,21 +69,29 @@ class Player:
             self.hand.append(self.deck.pop())
             number -= 1
             
-    def buy(self, cardName, supply): # assuming supply pile not empty
+    def gain(self, cardName, supply): # assuming supply pile not empty
         supply[cardName][0] -= 1;
         card = supply[cardName][1].deepCopy()
         self.discard.append(card)
-        # print(card.getName() + ' bought!')
+        # print(card.getName() + ' gained!')
         
     def totalPoints(self):
         points = 0
+        # print(self.getName())
+        # self.showAll()
+        
         for card in self.deck + self.discard + self.hand:
+            # print(card)
             if card.getName() == 'Province':
                 points += 6
             elif card.getName() == 'Duchy':
                 points += 3
             elif card.getName() == 'Estate':
                 points += 1
+            elif card.getName() == 'Curse':
+                points += -1
+            elif card.getName() == 'Gardens':
+                points += len(self.deck+self.discard+self.hand)//10
         return points
 
 
@@ -92,7 +110,7 @@ class Card: # card in the game
     def getCost(self): return self.cost
     def getSpecial(self): return self.specialAction
     
-    def playCard(self): 
+    def playCard(self):
         return self.effect[1:]
     def getDescription(self):
         return self.effect[0]
